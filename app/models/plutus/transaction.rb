@@ -40,7 +40,7 @@ module Plutus
     #   transaction = Plutus::Transaction.build(
     #     description: "Sold some widgets",
     #     debits: [
-    #       {account: "Accounts Receivable", amount: 50}], 
+    #       {account: "Accounts Receivable", amount: 50}],
     #     credits: [
     #       {account: "Sales Revenue", amount: 45},
     #       {account: "Sales Tax Payable", amount: 5}])
@@ -49,11 +49,11 @@ module Plutus
     def self.build(hash)
       transaction = Transaction.new(:description => hash[:description], :commercial_document => hash[:commercial_document])
       hash[:debits].each do |debit|
-        a = Account.find_by_name(debit[:account])
+        a = resolve_account(debit[:account])
         transaction.debit_amounts << DebitAmount.new(:account => a, :amount => debit[:amount], :transaction => transaction)
       end
       hash[:credits].each do |credit|
-        a = Account.find_by_name(credit[:account])
+        a = resolve_account(credit[:account])
         transaction.credit_amounts << CreditAmount.new(:account => a, :amount => credit[:amount], :transaction => transaction)
       end
       transaction
@@ -70,6 +70,12 @@ module Plutus
 
       def amounts_cancel?
         errors[:base] << "The credit and debit amounts are not equal" if credit_amounts.balance != debit_amounts.balance
+      end
+
+      def self.resolve_account(account)
+        return account if account.is_a?(Account)
+        return Account.find_by_id(account) if account.is_a?(Fixnum)
+        return Account.find_by_name(account) if account.is_a?(String)
       end
   end
 end

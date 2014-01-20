@@ -10,7 +10,7 @@ module Plutus
     context "with credit and debit" do
       let(:transaction) { FactoryGirl.build(:transaction_with_credit_and_debit) }
       it { should be_valid }
-      
+
       it "should require a description" do
         transaction.description = nil
         transaction.should_not be_valid
@@ -77,7 +77,7 @@ module Plutus
         description: "Sold some widgets",
         commercial_document: mock_document,
         debits: [
-          {account: "Accounts Receivable", amount: 50}], 
+          {account: "Accounts Receivable", amount: 50}],
         credits: [
           {account: "Sales Revenue", amount: 45},
           {account: "Sales Tax Payable", amount: 5}])
@@ -87,5 +87,46 @@ module Plutus
       saved_transaction.commercial_document.should == mock_document
     end
 
+    it "should allow account instances in the hash" do
+      receivable = FactoryGirl.create(:asset, name: "Accounts Receivable")
+      revenue = FactoryGirl.create(:revenue, name: "Sales Revenue")
+      tax = FactoryGirl.create(:liability, name: "Sales Tax Payable")
+
+      mock_document = FactoryGirl.create(:asset)
+      transaction = Transaction.build(
+        description: "Sold some widgets",
+        commercial_document: mock_document,
+        debits: [
+          {account: receivable, amount: 50}],
+          credits: [
+            {account: revenue, amount: 45},
+            {account: tax, amount: 5}])
+            transaction.save!
+
+      saved_transaction = Transaction.find(transaction.id)
+      saved_transaction.commercial_document.should == mock_document
+    end
+
+    it "should allow account IDs in the hash" do
+      receivable = FactoryGirl.create(:asset, name: "Accounts Receivable")
+      revenue = FactoryGirl.create(:revenue, name: "Sales Revenue")
+      tax = FactoryGirl.create(:liability, name: "Sales Tax Payable")
+
+      mock_document = FactoryGirl.create(:asset)
+      transaction = Transaction.build(
+        description: "Sold some widgets",
+        commercial_document: mock_document,
+        debits: [
+          {account: receivable.id, amount: 50}],
+          credits: [
+            {account: revenue.id, amount: 45},
+            {account: tax.id, amount: 5}])
+            transaction.save!
+
+      saved_transaction = Transaction.find(transaction.id)
+      saved_transaction.commercial_document.should == mock_document
+    end
+
   end
+
 end
